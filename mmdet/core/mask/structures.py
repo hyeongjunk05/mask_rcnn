@@ -68,7 +68,7 @@ class BitmapMasks(BaseInstanceMasks):
 
     def __init__(self, masks, height, width):
         self.height = height
-        self.width = width
+        self.width = width # 18th
         if len(masks) == 0:
             self.masks = np.empty((0, self.height, self.width), dtype=np.uint8)
         else:

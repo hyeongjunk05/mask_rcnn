@@ -19,7 +19,7 @@ def tensor2imgs(tensor, mean=(0, 0, 0), std=(1, 1, 1), to_rgb=True):
     return imgs
 
 
-def multi_apply(func, *args, **kwargs):
+def multi_apply(func, *args, **kwargs): # resnet + fpn feature output processing
     pfunc = partial(func, **kwargs) if kwargs else func
     map_results = map(pfunc, *args)
     return tuple(map(list, zip(*map_results)))

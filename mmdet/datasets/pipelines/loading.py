@@ -39,7 +39,7 @@ class LoadImageFromFile(object):
 
     def __call__(self, results):
         if self.file_client is None:
-            self.file_client = mmcv.FileClient(**self.file_client_args)
+            self.file_client = mmcv.FileClient(**self.file_client_args) # 11th
 
         if results['img_prefix'] is not None:
             filename = osp.join(results['img_prefix'],
@@ -54,7 +54,7 @@ class LoadImageFromFile(object):
 
         results['filename'] = filename
         results['ori_filename'] = results['img_info']['filename']
-        results['img'] = img
+        results['img'] = img # 12th
         results['img_shape'] = img.shape
         results['ori_shape'] = img.shape
         # Set initial values for default meta_keys
@@ -200,7 +200,7 @@ class LoadAnnotations(object):
         return results
 
     def _poly2mask(self, mask_ann, img_h, img_w):
-        if isinstance(mask_ann, list):
+        if isinstance(mask_ann, list): #16th
             # polygon -- a single object might consist of multiple parts
             # we merge all parts into one mask rle code
             rles = maskUtils.frPyObjects(mask_ann, img_h, img_w)
@@ -231,11 +231,11 @@ class LoadAnnotations(object):
         return valid_polygons
 
     def _load_masks(self, results):
-        h, w = results['img_info']['height'], results['img_info']['width']
+        h, w = results['img_info']['height'], results['img_info']['width'] # 15th
         gt_masks = results['ann_info']['masks']
         if self.poly2mask:
             gt_masks = BitmapMasks(
-                [self._poly2mask(mask, h, w) for mask in gt_masks], h, w)
+                [self._poly2mask(mask, h, w) for mask in gt_masks], h, w) # 17th
         else:
             gt_masks = PolygonMasks(
                 [self.process_polygons(polygons) for polygons in gt_masks], h,
@@ -258,7 +258,7 @@ class LoadAnnotations(object):
 
     def __call__(self, results):
         if self.with_bbox:
-            results = self._load_bboxes(results)
+            results = self._load_bboxes(results) # 14th
             if results is None:
                 return None
         if self.with_label:

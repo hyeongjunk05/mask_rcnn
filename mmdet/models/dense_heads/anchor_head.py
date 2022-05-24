@@ -372,7 +372,7 @@ class AnchorHead(nn.Module):
              gt_labels,
              img_metas,
              gt_bboxes_ignore=None):
-        featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
+        featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores] # almost 7 times
         assert len(featmap_sizes) == self.anchor_generator.num_levels
 
         device = cls_scores[0].device

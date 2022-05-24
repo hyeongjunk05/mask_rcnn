@@ -21,8 +21,8 @@ class Compose(object):
                 raise TypeError('transform must be callable or a dict')
 
     def __call__(self, data):
-        for t in self.transforms:
-            data = t(data)
+        for t in self.transforms: # 11th
+            data = t(data) # 13th
             if data is None:
                 return None
         return data

@@ -104,7 +104,7 @@ class CustomDataset(Dataset):
     def get_cat_ids(self, idx):
         return self.data_infos[idx]['ann']['labels'].astype(np.int).tolist()
 
-    def pre_pipeline(self, results):
+    def pre_pipeline(self, results): # 9th
         results['img_prefix'] = self.img_prefix
         results['seg_prefix'] = self.seg_prefix
         results['proposal_file'] = self.proposal_file
@@ -140,7 +140,7 @@ class CustomDataset(Dataset):
         if self.test_mode:
             return self.prepare_test_img(idx)
         while True:
-            data = self.prepare_train_img(idx)
+            data = self.prepare_train_img(idx) # first
             if data is None:
                 idx = self._rand_another(idx)
                 continue
@@ -152,7 +152,7 @@ class CustomDataset(Dataset):
         results = dict(img_info=img_info, ann_info=ann_info)
         if self.proposals is not None:
             results['proposals'] = self.proposals[idx]
-        self.pre_pipeline(results)
+        self.pre_pipeline(results) # 8th , 10th
         return self.pipeline(results)
 
     def prepare_test_img(self, idx):
