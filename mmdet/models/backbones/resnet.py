@@ -10,75 +10,9 @@ from mmdet.utils import get_root_logger
 from ..builder import BACKBONES
 from ..utils import ResLayer
 
-
+# dont delete, 'cuz it's used for other models' initialization.
 class BasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self,
-                 inplanes,
-                 planes,
-                 stride=1,
-                 dilation=1,
-                 downsample=None,
-                 style='pytorch',
-                 with_cp=False,
-                 conv_cfg=None,
-                 norm_cfg=dict(type='BN'),
-                 dcn=None,
-                 plugins=None):
-        super(BasicBlock, self).__init__()
-        assert dcn is None, 'Not implemented yet.'
-        assert plugins is None, 'Not implemented yet.'
-
-        self.norm1_name, norm1 = build_norm_layer(norm_cfg, planes, postfix=1)
-        self.norm2_name, norm2 = build_norm_layer(norm_cfg, planes, postfix=2)
-
-        self.conv1 = build_conv_layer(
-            conv_cfg,
-            inplanes,
-            planes,
-            3,
-            stride=stride,
-            padding=dilation,
-            dilation=dilation,
-            bias=False)
-        self.add_module(self.norm1_name, norm1)
-        self.conv2 = build_conv_layer(
-            conv_cfg, planes, planes, 3, padding=1, bias=False)
-        self.add_module(self.norm2_name, norm2)
-
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-        self.dilation = dilation
-        assert not with_cp
-
-    @property
-    def norm1(self):
-        return getattr(self, self.norm1_name)
-
-    @property
-    def norm2(self):
-        return getattr(self, self.norm2_name)
-
-    def forward(self, x):
-        identity = x
-
-        out = self.conv1(x)
-        out = self.norm1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.norm2(out)
-
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        out = self.relu(out)
-
-        return out
-
+    pass
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -338,12 +272,13 @@ class ResNet(nn.Module):
         (1, 512, 1, 1)
     """
 
+    # Bottleneck & BasicBlock are used here1.
     arch_settings = {
-        18: (BasicBlock, (2, 2, 2, 2)),
-        34: (BasicBlock, (3, 4, 6, 3)),
+        #18: (BasicBlock, (2, 2, 2, 2)),
+        #34: (BasicBlock, (3, 4, 6, 3)),
         50: (Bottleneck, (3, 4, 6, 3)),
-        101: (Bottleneck, (3, 4, 23, 3)),
-        152: (Bottleneck, (3, 8, 36, 3))
+        #101: (Bottleneck, (3, 4, 23, 3)),
+        #152: (Bottleneck, (3, 8, 36, 3))
     }
 
     def __init__(self,
@@ -434,6 +369,7 @@ class ResNet(nn.Module):
         self.feat_dim = self.block.expansion * base_channels * 2**(
             len(self.stage_blocks) - 1)
 
+    # used for ResNet init
     def make_stage_plugins(self, plugins, stage_idx):
         """ make plugins for ResNet 'stage_idx'th stage .
 
@@ -494,6 +430,7 @@ class ResNet(nn.Module):
 
         return stage_plugins
 
+    # used for ResNet init
     def make_res_layer(self, **kwargs):
         return ResLayer(**kwargs)
 
@@ -501,6 +438,7 @@ class ResNet(nn.Module):
     def norm1(self):
         return getattr(self, self.norm1_name)
 
+    # used for ResNet init
     def _make_stem_layer(self, in_channels, stem_channels):
         if self.deep_stem:
             self.stem = nn.Sequential(
@@ -549,6 +487,7 @@ class ResNet(nn.Module):
             self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
+    # used for ResNet init
     def _freeze_stages(self):
         if self.frozen_stages >= 0:
             if self.deep_stem:
@@ -567,6 +506,8 @@ class ResNet(nn.Module):
             for param in m.parameters():
                 param.requires_grad = False
 
+    # used not for ResNet init, then where? For Initialization Only.
+    # Bottleneck & BasicBlock are used here2.
     def init_weights(self, pretrained=None):
         if isinstance(pretrained, str):
             logger = get_root_logger()
@@ -593,6 +534,7 @@ class ResNet(nn.Module):
         else:
             raise TypeError('pretrained must be a str or None')
 
+    # used for ResNet itself
     def forward(self, x):
         if self.deep_stem:
             x = self.stem(x)
@@ -609,6 +551,7 @@ class ResNet(nn.Module):
                 outs.append(x)
         return tuple(outs)
 
+    # used for ResNet itself
     def train(self, mode=True):
         super(ResNet, self).train(mode)
         self._freeze_stages()
@@ -617,19 +560,3 @@ class ResNet(nn.Module):
                 # trick: eval have effect on BatchNorm only
                 if isinstance(m, _BatchNorm):
                     m.eval()
-
-
-@BACKBONES.register_module()
-class ResNetV1d(ResNet):
-    """ResNetV1d variant described in
-    `Bag of Tricks <https://arxiv.org/pdf/1812.01187.pdf>`_.
-
-    Compared with default ResNet(ResNetV1b), ResNetV1d replaces the 7x7 conv
-    in the input stem with three 3x3 convs. And in the downsampling block,
-    a 2x2 avg_pool with stride 2 is added before conv, whose stride is
-    changed to 1.
-    """
-
-    def __init__(self, **kwargs):
-        super(ResNetV1d, self).__init__(
-            deep_stem=True, avg_down=True, **kwargs)

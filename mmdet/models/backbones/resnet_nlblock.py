@@ -293,11 +293,12 @@ import torch.nn.init as init
 from torch.autograd import Variable
 # from models.non_local import NLBlockND
 
-
+# used in ResNet2D
 def _weights_init(m):
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
         init.kaiming_normal_(m.weight)
 
+# used in BasicBlock
 class LambdaLayer(nn.Module):
     def __init__(self, lambd):
         super(LambdaLayer, self).__init__()
@@ -342,7 +343,11 @@ class BasicBlock(nn.Module):
 
 @BACKBONES.register_module()
 class ResNet2D(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, non_local=False):
+    def __init__(self, 
+                    block, 
+                    num_blocks, 
+                    num_classes=10, 
+                    non_local=False):
         super(ResNet2D, self).__init__()
         self.in_planes = 16
 
@@ -357,6 +362,7 @@ class ResNet2D(nn.Module):
 
         self.apply(_weights_init)
 
+    # this is for nlBlock
     def _make_layer(self, block, planes, num_blocks, stride, non_local=False):
         strides = [stride] + [1]*(num_blocks-1)
         layers = []
@@ -386,24 +392,24 @@ class ResNet2D(nn.Module):
         return out
 
 
-def resnet2D56(non_local=False, **kwargs):
-    """Constructs a ResNet-56 model.
-    """
-    return ResNet2D(BasicBlock, [9, 9, 9], non_local=non_local, **kwargs)
+# def resnet2D56(non_local=False, **kwargs):
+#     """Constructs a ResNet-56 model.
+#     """
+#     return ResNet2D(BasicBlock, [9, 9, 9], non_local=non_local, **kwargs)
 
 
-if __name__=='__main__':
-    # Test case for (224 x 224 x 3) input of batch size 1
-    img = Variable(torch.randn(1, 3, 224, 224))
-    net = resnet2D56()
-    count = 0
-    for name, param in net.named_parameters():
-        if param.requires_grad:
-            count += 1
-            print(name)
-    print (count)
-    out = net(img)
-    print(out.size())
+# if __name__=='__main__':
+#     # Test case for (224 x 224 x 3) input of batch size 1
+#     img = Variable(torch.randn(1, 3, 224, 224))
+#     net = resnet2D56()
+#     count = 0
+#     for name, param in net.named_parameters():
+#         if param.requires_grad:
+#             count += 1
+#             print(name)
+#     print (count)
+#     out = net(img)
+#     print(out.size())
 
 
 
@@ -901,19 +907,3 @@ class ResNet(nn.Module):
                 # trick: eval have effect on BatchNorm only
                 if isinstance(m, _BatchNorm):
                     m.eval()
-
-
-# @BACKBONES.register_module()
-class ResNetV1d(ResNet):
-    """ResNetV1d variant described in
-    `Bag of Tricks <https://arxiv.org/pdf/1812.01187.pdf>`_.
-
-    Compared with default ResNet(ResNetV1b), ResNetV1d replaces the 7x7 conv
-    in the input stem with three 3x3 convs. And in the downsampling block,
-    a 2x2 avg_pool with stride 2 is added before conv, whose stride is
-    changed to 1.
-    """
-
-    def __init__(self, **kwargs):
-        super(ResNetV1d, self).__init__(
-            deep_stem=True, avg_down=True, **kwargs)
